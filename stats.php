@@ -75,12 +75,13 @@ try {
     $today = $pdo->query("SELECT COUNT(*) FROM visits WHERE created_at >= CURDATE()")->fetchColumn();
     $week = $pdo->query("SELECT COUNT(*) FROM visits WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)")->fetchColumn();
 
-    // Top pages
-    $topPages = $pdo->query("
-        SELECT path, COUNT(*) as views
+    // Projets cliqués (path qui ne commence pas par /)
+    $topProjects = $pdo->query("
+        SELECT path, COUNT(*) as clicks
         FROM visits
+        WHERE path NOT LIKE '/%' AND path NOT LIKE '#%'
         GROUP BY path
-        ORDER BY views DESC
+        ORDER BY clicks DESC
         LIMIT 5
     ")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -94,14 +95,19 @@ try {
         LIMIT 5
     ")->fetchAll(PDO::FETCH_ASSOC);
 
-    // Visites par jour (7 derniers jours)
-    $daily = $pdo->query("
+    // Visites par jour (7 derniers jours) - toujours 7 entrées
+    $dailyRaw = $pdo->query("
         SELECT DATE(created_at) as day, COUNT(*) as views
         FROM visits
-        WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
         GROUP BY DATE(created_at)
-        ORDER BY day ASC
-    ")->fetchAll(PDO::FETCH_ASSOC);
+    ")->fetchAll(PDO::FETCH_KEY_PAIR);
+
+    $daily = [];
+    for ($i = 6; $i >= 0; $i--) {
+        $date = date('Y-m-d', strtotime("-$i days"));
+        $daily[] = ['day' => $date, 'views' => $dailyRaw[$date] ?? 0];
+    }
 
 } catch (Exception $e) {
     $error = true;
@@ -119,6 +125,7 @@ $countryNames = ['FR'=>'France','US'=>'États-Unis','GB'=>'Royaume-Uni','DE'=>'A
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@400;500&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <style>
         :root {
             --black: #080808;
@@ -303,12 +310,33 @@ $countryNames = ['FR'=>'France','US'=>'États-Unis','GB'=>'Royaume-Uni','DE'=>'A
             opacity: 1;
         }
 
-        .empty {
-            color: var(--white-muted);
-            font-size: 0.8125rem;
-            padding: 24px;
-            text-align: center;
+        .chart-bar.empty-bar {
+            background: rgba(255, 255, 255, 0.03);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 24px;
             background: var(--black-card);
+            border: 1px dashed rgba(255, 255, 255, 0.08);
+        }
+
+        .empty-icon {
+            font-family: 'Material Icons Round';
+            font-size: 32px;
+            color: var(--white-muted);
+            opacity: 0.4;
+            margin-bottom: 12px;
+        }
+
+        .empty-state p {
+            font-size: 0.75rem;
+            color: var(--white-muted);
+            letter-spacing: 0.02em;
         }
 
         footer {
@@ -366,36 +394,35 @@ $countryNames = ['FR'=>'France','US'=>'États-Unis','GB'=>'Royaume-Uni','DE'=>'A
 
         <section>
             <h2>7 derniers jours</h2>
-            <?php if (empty($daily)): ?>
-                <p class="empty">Aucune donnée</p>
-            <?php else: ?>
-                <?php $maxViews = max(array_column($daily, 'views')); ?>
-                <div class="chart">
-                    <?php foreach ($daily as $d): ?>
-                        <?php
-                            $height = $maxViews > 0 ? ($d['views'] / $maxViews) * 100 : 0;
-                            $dayLabel = date('d/m', strtotime($d['day']));
-                        ?>
-                        <div class="chart-bar"
-                             style="height: <?= $height ?>%"
-                             data-label="<?= $dayLabel ?>"
-                             data-value="<?= $d['views'] ?>">
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
+            <?php $maxViews = max(array_column($daily, 'views')) ?: 1; ?>
+            <div class="chart">
+                <?php foreach ($daily as $d): ?>
+                    <?php
+                        $height = ($d['views'] / $maxViews) * 100;
+                        $dayLabel = date('d/m', strtotime($d['day']));
+                    ?>
+                    <div class="chart-bar <?= $d['views'] === 0 ? 'empty-bar' : '' ?>"
+                         style="height: <?= max($height, 4) ?>%"
+                         data-label="<?= $dayLabel ?>"
+                         data-value="<?= $d['views'] ?>">
+                    </div>
+                <?php endforeach; ?>
+            </div>
         </section>
 
         <section>
-            <h2>Pages</h2>
-            <?php if (empty($topPages)): ?>
-                <p class="empty">Aucune donnée</p>
+            <h2>Projets cliqués</h2>
+            <?php if (empty($topProjects)): ?>
+                <div class="empty-state">
+                    <span class="empty-icon">play_arrow</span>
+                    <p>En attente des premiers clics</p>
+                </div>
             <?php else: ?>
                 <div class="list">
-                    <?php foreach ($topPages as $page): ?>
+                    <?php foreach ($topProjects as $project): ?>
                         <div class="list-item">
-                            <span class="list-item-name"><?= htmlspecialchars($page['path']) ?></span>
-                            <span class="list-item-value"><?= number_format($page['views']) ?></span>
+                            <span class="list-item-name"><?= htmlspecialchars($project['path']) ?></span>
+                            <span class="list-item-value"><?= number_format($project['clicks']) ?></span>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -405,7 +432,10 @@ $countryNames = ['FR'=>'France','US'=>'États-Unis','GB'=>'Royaume-Uni','DE'=>'A
         <section>
             <h2>Pays</h2>
             <?php if (empty($topCountries)): ?>
-                <p class="empty">Aucune donnée</p>
+                <div class="empty-state">
+                    <span class="empty-icon">public</span>
+                    <p>En attente des premières visites</p>
+                </div>
             <?php else: ?>
                 <div class="list">
                     <?php foreach ($topCountries as $c): ?>
