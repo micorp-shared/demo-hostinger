@@ -255,46 +255,12 @@
             max-width: 440px;
         }
 
-        /* Portrait wrapper for geometric effect */
+        /* Portrait wrapper */
         .hero-portrait-wrapper {
             position: relative;
             display: flex;
             justify-content: center;
             align-items: center;
-        }
-
-        /* Subtle rotating geometric shapes behind portrait */
-        .geo-ring {
-            position: absolute;
-            border: 1px solid var(--accent);
-            opacity: 0.08;
-            pointer-events: none;
-        }
-
-        .geo-ring-1 {
-            width: 108%;
-            height: 108%;
-            transform: rotate(45deg);
-            animation: geoRotate1 40s linear infinite;
-        }
-
-        .geo-ring-2 {
-            width: 115%;
-            height: 115%;
-            border-color: var(--accent-secondary);
-            opacity: 0.05;
-            transform: rotate(-30deg);
-            animation: geoRotate2 50s linear infinite;
-        }
-
-        @keyframes geoRotate1 {
-            from { transform: rotate(45deg); }
-            to { transform: rotate(405deg); }
-        }
-
-        @keyframes geoRotate2 {
-            from { transform: rotate(-30deg); }
-            to { transform: rotate(-390deg); }
         }
 
         /* Scroll reveal animations */
@@ -978,7 +944,7 @@
 
     <nav>
         <div class="container">
-            <a href="#" class="logo">Mi<span>code</span></a>
+            <a href="#" class="logo"><img src="white_logotype_micorp.png" alt="Micorp" style="height: 18px;"></a>
             <ul>
                 <li><a href="#about">À propos</a></li>
                 <li><a href="#work">Travaux</a></li>
@@ -1007,8 +973,6 @@
                     </p>
                 </div>
                 <div class="hero-portrait-wrapper">
-                    <div class="geo-ring geo-ring-1"></div>
-                    <div class="geo-ring geo-ring-2"></div>
                     <div class="hero-portrait">
                         <img src="michael_BW.jpg" alt="Michaël de Marliave">
                         <span class="portrait-corner tl"></span>
@@ -1193,7 +1157,7 @@
 
     <footer>
         <div class="container">
-            <p>Micode · Micorp</p>
+            <p><img src="white_logotype_micorp.png" alt="Micorp" style="height: 14px; vertical-align: middle; opacity: 0.6;"></p>
             <p>© 2025</p>
         </div>
     </footer>
