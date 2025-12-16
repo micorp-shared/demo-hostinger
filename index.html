@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Micode</title>
+    <meta name="description" content="Michaël de Marliave. Investigation numérique.">
+    <meta name="theme-color" content="#080808">
+
+    <meta property="og:title" content="Micode">
+    <meta property="og:description" content="Investigation numérique.">
+    <meta property="og:type" content="website">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --black: #080808;
+            --black-elevated: #0c0c0c;
+            --black-card: #101010;
+            --white: #ececec;
+            --white-soft: #909090;
+            --white-muted: #484848;
+            --accent: #00d4ff;
+            --accent-secondary: #a855f7;
+            --accent-glow: rgba(0, 212, 255, 0.2);
+            --accent-glow-strong: rgba(0, 212, 255, 0.4);
+            --accent-subtle: rgba(0, 212, 255, 0.08);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        ::selection {
+            background: var(--accent);
+            color: var(--black);
+        }
+
+        html {
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'IBM Plex Mono', monospace;
+            background: var(--black);
+            color: var(--white);
+            line-height: 1.7;
+            font-weight: 400;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        /* Scanlines */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.03) 2px,
+                rgba(0, 0, 0, 0.03) 4px
+            );
+            z-index: 10000;
+        }
+
+        /* Noise texture */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.02;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            z-index: 9999;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Funnel Display', sans-serif;
+            font-weight: 500;
+            letter-spacing: -0.03em;
+        }
+
+        .container {
+            max-width: 1320px;
+            margin: 0 auto;
+            padding: 0 clamp(24px, 6vw, 100px);
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 28px 0;
+            background: linear-gradient(to bottom, var(--black) 0%, transparent 100%);
+        }
+
+        nav .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Funnel Display', sans-serif;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--white);
+            text-decoration: none;
+            letter-spacing: -0.02em;
+            position: relative;
+        }
+
+        .logo span {
+            color: var(--accent);
+            text-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        nav ul {
+            display: flex;
+            gap: 48px;
+            list-style: none;
+        }
+
+        nav a {
+            color: var(--white-soft);
+            text-decoration: none;
+            font-size: 0.6875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            transition: all 0.3s ease;
+        }
+
+        nav a:hover {
+            color: var(--accent);
+            text-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        /* Hero */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 140px 0 120px;
+            position: relative;
+        }
+
+        /* Animated gradient orb - cyan */
+        .hero-orb {
+            position: absolute;
+            width: 700px;
+            height: 700px;
+            right: 5%;
+            top: 40%;
+            transform: translateY(-50%);
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 60%);
+            filter: blur(100px);
+            opacity: 0.6;
+            animation: orbFloat 10s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        /* Secondary orb - purple */
+        .hero-orb-secondary {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            left: -5%;
+            top: 60%;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.25) 0%, transparent 60%);
+            filter: blur(100px);
+            opacity: 0.8;
+            animation: orbFloat2 14s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translateY(-50%) scale(1); opacity: 0.6; }
+            50% { transform: translateY(-55%) scale(1.1); opacity: 0.8; }
+        }
+
+        @keyframes orbFloat2 {
+            0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.8; }
+            50% { transform: scale(1.2) translate(40px, -30px); opacity: 0.6; }
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 80px;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-content {
+            max-width: 580px;
+        }
+
+        .hero-eyebrow {
+            font-size: 0.625rem;
+            text-transform: uppercase;
+            letter-spacing: 0.25em;
+            color: var(--accent);
+            margin-bottom: 28px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .hero-eyebrow::before {
+            content: '';
+            width: 32px;
+            height: 1px;
+            background: var(--accent);
+        }
+
+        .hero h1 {
+            font-size: clamp(3.5rem, 8vw, 6rem);
+            line-height: 0.95;
+            margin-bottom: 36px;
+            font-weight: 500;
+        }
+
+        .hero h1 .outline {
+            color: transparent;
+            -webkit-text-stroke: 1.5px var(--white);
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            display: inline-block;
+        }
+
+        .hero h1 .outline:hover {
+            color: var(--accent);
+            -webkit-text-stroke-color: var(--accent);
+            text-shadow:
+                0 0 40px var(--accent-glow-strong),
+                0 0 80px var(--accent-glow);
+        }
+
+        .hero-text {
+            color: var(--white-soft);
+            font-size: 0.875rem;
+            line-height: 2;
+            max-width: 440px;
+        }
+
+        /* Portrait wrapper for geometric effect */
+        .hero-portrait-wrapper {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Subtle rotating geometric shapes behind portrait */
+        .geo-ring {
+            position: absolute;
+            border: 1px solid var(--accent);
+            opacity: 0.08;
+            pointer-events: none;
+        }
+
+        .geo-ring-1 {
+            width: 108%;
+            height: 108%;
+            transform: rotate(45deg);
+            animation: geoRotate1 40s linear infinite;
+        }
+
+        .geo-ring-2 {
+            width: 115%;
+            height: 115%;
+            border-color: var(--accent-secondary);
+            opacity: 0.05;
+            transform: rotate(-30deg);
+            animation: geoRotate2 50s linear infinite;
+        }
+
+        @keyframes geoRotate1 {
+            from { transform: rotate(45deg); }
+            to { transform: rotate(405deg); }
+        }
+
+        @keyframes geoRotate2 {
+            from { transform: rotate(-30deg); }
+            to { transform: rotate(-390deg); }
+        }
+
+        /* Scroll reveal animations */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .reveal-delay-1 { transition-delay: 0.1s; }
+        .reveal-delay-2 { transition-delay: 0.2s; }
+        .reveal-delay-3 { transition-delay: 0.3s; }
+        .reveal-delay-4 { transition-delay: 0.4s; }
+        .reveal-delay-5 { transition-delay: 0.5s; }
+
+        /* Fade only variant */
+        .reveal-fade {
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        .reveal-fade.visible {
+            opacity: 1;
+        }
+
+        /* Scale variant for cards */
+        .reveal-scale {
+            opacity: 0;
+            transform: scale(0.96);
+            transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal-scale.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .hero-portrait {
+            position: relative;
+            aspect-ratio: 3/4;
+            overflow: hidden;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .hero-portrait img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(100%) contrast(1.1);
+            transition: filter 0.6s ease;
+        }
+
+        .hero-portrait:hover img {
+            filter: grayscale(50%) contrast(1.15);
+        }
+
+        .hero-portrait::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border: 1px solid rgba(255,255,255,0.1);
+            pointer-events: none;
+        }
+
+        /* Corner accents on portrait */
+        .portrait-corner {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 1px solid var(--accent);
+            opacity: 0;
+            transition: all 0.4s ease;
+            z-index: 3;
+        }
+
+        .portrait-corner.tl { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+        .portrait-corner.tr { top: -1px; right: -1px; border-left: none; border-bottom: none; }
+        .portrait-corner.bl { bottom: -1px; left: -1px; border-right: none; border-top: none; }
+        .portrait-corner.br { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+
+        .hero-portrait:hover .portrait-corner {
+            opacity: 1;
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        /* Sections */
+        section {
+            padding: 120px 0;
+            position: relative;
+        }
+
+        .section-eyebrow {
+            font-size: 0.5625rem;
+            text-transform: uppercase;
+            letter-spacing: 0.25em;
+            color: var(--accent);
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: clamp(2.25rem, 5vw, 3.5rem);
+            line-height: 1.1;
+            margin-bottom: 20px;
+        }
+
+        /* About */
+        #about {
+            background: var(--black-elevated);
+            overflow: hidden;
+        }
+
+        /* Floating particles */
+        .particles {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            background: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 6px var(--accent);
+            animation: floatParticle 15s linear infinite;
+        }
+
+        .particle:nth-child(1) { left: 5%; animation-delay: 0s; }
+        .particle:nth-child(2) { left: 15%; animation-delay: -2s; }
+        .particle:nth-child(3) { left: 25%; animation-delay: -4s; }
+        .particle:nth-child(4) { left: 40%; animation-delay: -6s; }
+        .particle:nth-child(5) { left: 55%; animation-delay: -8s; }
+        .particle:nth-child(6) { left: 70%; animation-delay: -10s; }
+        .particle:nth-child(7) { left: 85%; animation-delay: -12s; }
+        .particle:nth-child(8) { left: 95%; animation-delay: -14s; }
+
+        @keyframes floatParticle {
+            0% {
+                transform: translateY(100%) scale(0);
+                opacity: 0;
+            }
+            5% {
+                opacity: 0.8;
+                transform: translateY(90%) scale(1);
+            }
+            95% {
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(-100vh) scale(1);
+                opacity: 0;
+            }
+        }
+
+        .about-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 100px;
+            align-items: start;
+            position: relative;
+            z-index: 1;
+        }
+
+        .about-text p {
+            color: var(--white-soft);
+            font-size: 0.875rem;
+            line-height: 2;
+            margin-bottom: 24px;
+        }
+
+        .about-meta {
+            display: flex;
+            gap: 56px;
+            margin-top: 56px;
+            padding-top: 32px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .meta-item {
+            text-align: left;
+        }
+
+        .meta-value {
+            font-family: 'Funnel Display', sans-serif;
+            font-size: 2rem;
+            font-weight: 500;
+            color: var(--white);
+            letter-spacing: -0.02em;
+        }
+
+        .meta-label {
+            font-size: 0.5625rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--white-muted);
+            margin-top: 4px;
+        }
+
+        /* Work */
+        #work {
+            background: var(--black);
+        }
+
+        .work-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+            margin-bottom: 56px;
+        }
+
+        .work-header-text {
+            max-width: 480px;
+        }
+
+        .work-link {
+            font-size: 0.6875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--white-soft);
+            text-decoration: none;
+            padding-bottom: 4px;
+            border-bottom: 1px solid var(--white-muted);
+            transition: all 0.3s ease;
+        }
+
+        .work-link:hover {
+            color: var(--accent);
+            border-color: var(--accent);
+            text-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        /* Bento grid */
+        .work-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, auto);
+            gap: 16px;
+        }
+
+        .work-item {
+            position: relative;
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            background: var(--black-card);
+            border: 1px solid rgba(255,255,255,0.04);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow: hidden;
+        }
+
+        .work-item::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--accent-subtle) 0%, transparent 50%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .work-item:hover {
+            border-color: rgba(0, 212, 255, 0.3);
+            transform: translateY(-4px);
+            box-shadow:
+                0 20px 40px rgba(0, 0, 0, 0.4),
+                0 0 30px var(--accent-subtle);
+        }
+
+        .work-item:hover::before {
+            opacity: 1;
+        }
+
+        .work-item.featured {
+            grid-column: 1 / 3;
+            grid-row: 1 / 3;
+        }
+
+        .work-thumb {
+            position: relative;
+            aspect-ratio: 16/9;
+            overflow: hidden;
+            background: var(--black-card);
+        }
+
+        .work-item.featured .work-thumb {
+            aspect-ratio: 16/10;
+        }
+
+        .work-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: saturate(0.3) contrast(1.1) brightness(0.95);
+            transform: scale(1.01);
+            transform-origin: center center;
+            transition: filter 0.6s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: transform;
+        }
+
+        .work-item:hover .work-thumb img {
+            filter: saturate(0.8) contrast(1.15) brightness(1);
+            transform: scale(1.06);
+        }
+
+        .work-thumb::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            background: linear-gradient(to top, var(--black-card) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        /* Play icon */
+        .work-play {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            width: 56px;
+            height: 56px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 2;
+            backdrop-filter: blur(4px);
+            background: rgba(0,0,0,0.3);
+        }
+
+        .work-play::before {
+            content: '';
+            width: 0;
+            height: 0;
+            border-left: 12px solid var(--white);
+            border-top: 7px solid transparent;
+            border-bottom: 7px solid transparent;
+            margin-left: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .work-item:hover .work-play {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+            border-color: var(--accent);
+            box-shadow: 0 0 30px var(--accent-glow);
+        }
+
+        .work-item:hover .work-play::before {
+            border-left-color: var(--accent);
+        }
+
+        .work-info {
+            padding: 20px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .work-views {
+            font-size: 0.5625rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+
+        .work-title {
+            font-family: 'Funnel Display', sans-serif;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            line-height: 1.4;
+            letter-spacing: -0.01em;
+        }
+
+        .work-item.featured .work-info {
+            padding: 28px;
+        }
+
+        .work-item.featured .work-views {
+            font-size: 0.625rem;
+        }
+
+        .work-item.featured .work-title {
+            font-size: 1.375rem;
+        }
+
+        /* Numbers */
+        #numbers {
+            background: var(--black-elevated);
+            padding: 80px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #numbers::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            animation: gridPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes gridPulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .numbers-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            background: rgba(0, 212, 255, 0.1);
+            position: relative;
+            z-index: 1;
+        }
+
+        .number-item {
+            background: var(--black-elevated);
+            padding: 48px 32px;
+            text-align: center;
+            transition: all 0.4s ease;
+            position: relative;
+        }
+
+        .number-item::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, var(--accent-subtle), transparent);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .number-item:hover {
+            background: var(--black-card);
+        }
+
+        .number-item:hover::before {
+            opacity: 1;
+        }
+
+        .number-value {
+            font-family: 'Funnel Display', sans-serif;
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 600;
+            line-height: 1;
+            background: linear-gradient(135deg, var(--white) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+            z-index: 1;
+        }
+
+        .number-label {
+            font-size: 0.5625rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--white-muted);
+            margin-top: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Contact */
+        #contact {
+            padding: 160px 0;
+            background: var(--black);
+            position: relative;
+        }
+
+        .contact-inner {
+            max-width: 600px;
+        }
+
+        .contact-inner h2 {
+            font-size: clamp(2.75rem, 6vw, 4.5rem);
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .contact-inner p {
+            color: var(--white-soft);
+            font-size: 0.875rem;
+            line-height: 2;
+            margin-bottom: 40px;
+        }
+
+        .contact-links {
+            display: flex;
+            gap: 36px;
+        }
+
+        .contact-link {
+            color: var(--white-muted);
+            text-decoration: none;
+            font-size: 0.6875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .contact-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--accent);
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        .contact-link:hover {
+            color: var(--accent);
+            text-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .contact-link:hover::after {
+            width: 100%;
+        }
+
+        /* Footer */
+        footer {
+            padding: 24px 0;
+            border-top: 1px solid rgba(255,255,255,0.04);
+            background: var(--black);
+        }
+
+        footer .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        footer p {
+            font-size: 0.625rem;
+            letter-spacing: 0.05em;
+            color: var(--white-muted);
+        }
+
+        /* Cursor glow */
+        .cursor-glow {
+            position: fixed;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, var(--accent-subtle) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9998;
+            opacity: 0;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s ease;
+            filter: blur(40px);
+        }
+
+        body:hover .cursor-glow {
+            opacity: 0.6;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .hero-grid {
+                grid-template-columns: 1fr;
+                gap: 56px;
+            }
+
+            .hero-portrait-wrapper {
+                order: -1;
+            }
+
+            .hero-portrait {
+                max-width: 340px;
+            }
+
+            .hero-orb {
+                right: -30%;
+                opacity: 0.4;
+            }
+
+            .hero-orb-secondary {
+                left: -30%;
+                opacity: 0.5;
+            }
+
+            .geo-ring {
+                display: none;
+            }
+
+            .about-grid {
+                grid-template-columns: 1fr;
+                gap: 48px;
+            }
+
+            .work-grid {
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto;
+            }
+
+            .work-item.featured {
+                grid-column: 1 / 3;
+                grid-row: auto;
+            }
+
+            .numbers-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            nav ul {
+                display: none;
+            }
+
+            .hero {
+                padding: 120px 0 80px;
+            }
+
+            .hero-portrait {
+                max-width: 280px;
+            }
+
+            .work-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .work-item.featured {
+                grid-column: 1;
+            }
+
+            .about-meta {
+                flex-direction: column;
+                gap: 24px;
+            }
+
+            .contact-links {
+                flex-wrap: wrap;
+                gap: 20px 28px;
+            }
+
+            .work-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 20px;
+            }
+
+            .numbers-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .number-item {
+                padding: 32px 20px;
+            }
+
+            .cursor-glow {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="cursor-glow" id="cursorGlow"></div>
+
+    <nav>
+        <div class="container">
+            <a href="#" class="logo">Mi<span>code</span></a>
+            <ul>
+                <li><a href="#about">À propos</a></li>
+                <li><a href="#work">Travaux</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-orb"></div>
+        <div class="hero-orb-secondary"></div>
+        <div class="container">
+            <div class="hero-grid">
+                <div class="hero-content">
+                    <p class="hero-eyebrow">Investigation numérique</p>
+                    <h1>
+                        <span class="outline">Infiltrer</span><br>
+                        Décoder<br>
+                        Révéler
+                    </h1>
+                    <p class="hero-text">
+                        J'explore les zones grises du numérique.
+                        Cybersécurité, arnaques en ligne, réseaux criminels.
+                        Des enquêtes au long cours pour comprendre ce qui se joue
+                        vraiment derrière nos écrans.
+                    </p>
+                </div>
+                <div class="hero-portrait-wrapper">
+                    <div class="geo-ring geo-ring-1"></div>
+                    <div class="geo-ring geo-ring-2"></div>
+                    <div class="hero-portrait">
+                        <img src="michael_BW.jpg" alt="Michaël de Marliave">
+                        <span class="portrait-corner tl"></span>
+                        <span class="portrait-corner tr"></span>
+                        <span class="portrait-corner bl"></span>
+                        <span class="portrait-corner br"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="about">
+        <div class="particles">
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+        </div>
+        <div class="container">
+            <div class="about-grid">
+                <div>
+                    <p class="section-eyebrow reveal">À propos</p>
+                    <h2 class="section-title reveal reveal-delay-1">L'investigation<br>accessible à tous</h2>
+                </div>
+                <div class="about-text">
+                    <p class="reveal reveal-delay-2">
+                        Depuis 2017, je décrypte les enjeux du numérique
+                        et de la cybersécurité sur YouTube. Une approche rigoureuse,
+                        un format long, une exigence documentaire.
+                    </p>
+                    <p class="reveal reveal-delay-3">
+                        Du faux support informatique aux pyramides de Ponzi,
+                        des arnaques au SMS aux réseaux de blanchiment.
+                        Chaque enquête est une immersion de plusieurs mois
+                        dans des univers que l'on préfère ignorer.
+                    </p>
+                    <div class="about-meta reveal reveal-delay-4">
+                        <div class="meta-item">
+                            <div class="meta-value">1.25M</div>
+                            <div class="meta-label">Abonnés</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-value">2017</div>
+                            <div class="meta-label">Depuis</div>
+                        </div>
+                        <div class="meta-item">
+                            <div class="meta-value">Micorp</div>
+                            <div class="meta-label">Production</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="work">
+        <div class="container">
+            <div class="work-header">
+                <div class="work-header-text">
+                    <p class="section-eyebrow reveal">Travaux</p>
+                    <h2 class="section-title reveal reveal-delay-1">Enquêtes récentes</h2>
+                </div>
+                <a href="https://youtube.com/@Micode" target="_blank" rel="noopener" class="work-link reveal reveal-delay-2">Voir tout</a>
+            </div>
+
+            <div class="work-grid">
+                <a href="https://www.youtube.com/watch?v=90QU1zK6kM4" target="_blank" rel="noopener" class="work-item featured reveal-scale">
+                    <div class="work-thumb">
+                        <img src="https://i.ytimg.com/vi/90QU1zK6kM4/maxresdefault.jpg" alt="Pyramide de Ponzi" loading="lazy">
+                        <div class="work-play"></div>
+                    </div>
+                    <div class="work-info">
+                        <p class="work-views">3.6M vues</p>
+                        <h3 class="work-title">J'ai infiltré une pyramide de Ponzi</h3>
+                    </div>
+                </a>
+
+                <a href="https://www.youtube.com/watch?v=2wMxldl3Alk" target="_blank" rel="noopener" class="work-item reveal-scale">
+                    <div class="work-thumb">
+                        <img src="https://i.ytimg.com/vi/2wMxldl3Alk/maxresdefault.jpg" alt="Tech française" loading="lazy">
+                        <div class="work-play"></div>
+                    </div>
+                    <div class="work-info">
+                        <p class="work-views">1.7M vues</p>
+                        <h3 class="work-title">Le complot le plus grave de la tech française</h3>
+                    </div>
+                </a>
+
+                <a href="https://www.youtube.com/watch?v=iL5LC0a7KJY" target="_blank" rel="noopener" class="work-item reveal-scale">
+                    <div class="work-thumb">
+                        <img src="https://i.ytimg.com/vi/iL5LC0a7KJY/maxresdefault.jpg" alt="Blanchiment" loading="lazy">
+                        <div class="work-play"></div>
+                    </div>
+                    <div class="work-info">
+                        <p class="work-views">3.8M vues</p>
+                        <h3 class="work-title">Comment blanchir de l'argent ?</h3>
+                    </div>
+                </a>
+
+                <a href="https://www.youtube.com/watch?v=8vnutj0Mrc4" target="_blank" rel="noopener" class="work-item reveal-scale">
+                    <div class="work-thumb">
+                        <img src="https://i.ytimg.com/vi/8vnutj0Mrc4/maxresdefault.jpg" alt="Infiltration" loading="lazy">
+                        <div class="work-play"></div>
+                    </div>
+                    <div class="work-info">
+                        <p class="work-views">1.9M vues</p>
+                        <h3 class="work-title">L'infiltration impossible</h3>
+                    </div>
+                </a>
+
+                <a href="https://www.youtube.com/watch?v=dS01AoUF1xo" target="_blank" rel="noopener" class="work-item reveal-scale">
+                    <div class="work-thumb">
+                        <img src="https://i.ytimg.com/vi/dS01AoUF1xo/maxresdefault.jpg" alt="Téléphones criminels" loading="lazy">
+                        <div class="work-play"></div>
+                    </div>
+                    <div class="work-info">
+                        <p class="work-views">2.8M vues</p>
+                        <h3 class="work-title">Téléphones à 6000$</h3>
+                    </div>
+                </a>
+
+                <a href="https://www.youtube.com/watch?v=ag6-52_1SDA" target="_blank" rel="noopener" class="work-item reveal-scale">
+                    <div class="work-thumb">
+                        <img src="https://i.ytimg.com/vi/ag6-52_1SDA/maxresdefault.jpg" alt="Crime organisé" loading="lazy">
+                        <div class="work-play"></div>
+                    </div>
+                    <div class="work-info">
+                        <p class="work-views">2.75M vues</p>
+                        <h3 class="work-title">24h du crime organisé</h3>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section id="numbers">
+        <div class="container">
+            <div class="numbers-grid">
+                <div class="number-item reveal-fade">
+                    <div class="number-value">100M+</div>
+                    <div class="number-label">Vues totales</div>
+                </div>
+                <div class="number-item reveal-fade" style="transition-delay: 0.1s;">
+                    <div class="number-value">1.9M</div>
+                    <div class="number-label">Abonnés cumulés</div>
+                </div>
+                <div class="number-item reveal-fade" style="transition-delay: 0.2s;">
+                    <div class="number-value">8</div>
+                    <div class="number-label">Années</div>
+                </div>
+                <div class="number-item reveal-fade" style="transition-delay: 0.3s;">
+                    <div class="number-value">50+</div>
+                    <div class="number-label">Enquêtes</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact">
+        <div class="container">
+            <div class="contact-inner">
+                <p class="section-eyebrow reveal">Contact</p>
+                <h2 class="reveal reveal-delay-1">Échangeons</h2>
+                <p class="reveal reveal-delay-2">
+                    Presse, partenariats, ou simplement pour discuter
+                    d'un sujet d'enquête.
+                </p>
+                <div class="contact-links reveal reveal-delay-3">
+                    <a href="https://youtube.com/@Micode" target="_blank" rel="noopener" class="contact-link">YouTube</a>
+                    <a href="https://twitter.com/Micode" target="_blank" rel="noopener" class="contact-link">X</a>
+                    <a href="https://www.instagram.com/micode/" target="_blank" rel="noopener" class="contact-link">Instagram</a>
+                    <a href="https://www.twitch.tv/micode" target="_blank" rel="noopener" class="contact-link">Twitch</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>Micode · Micorp</p>
+            <p>© 2025</p>
+        </div>
+    </footer>
+
+    <script>
+        // Smooth scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // Cursor glow follow
+        const cursorGlow = document.getElementById('cursorGlow');
+        let mouseX = 0, mouseY = 0;
+        let glowX = 0, glowY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        function animateGlow() {
+            glowX += (mouseX - glowX) * 0.1;
+            glowY += (mouseY - glowY) * 0.1;
+            cursorGlow.style.left = glowX + 'px';
+            cursorGlow.style.top = glowY + 'px';
+            requestAnimationFrame(animateGlow);
+        }
+        animateGlow();
+
+        // Scroll reveal animations - replay on re-scroll
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px 0px -60px 0px',
+            threshold: 0.15
+        };
+
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                } else {
+                    // Only remove if element is above viewport (scrolled past)
+                    const rect = entry.boundingClientRect;
+                    if (rect.top > 0) {
+                        entry.target.classList.remove('visible');
+                    }
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal, .reveal-fade, .reveal-scale').forEach(el => {
+            revealObserver.observe(el);
+        });
+    </script>
+</body>
+</html>
