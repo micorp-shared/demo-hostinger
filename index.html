@@ -1217,6 +1217,15 @@
         document.querySelectorAll('.reveal, .reveal-fade, .reveal-scale').forEach(el => {
             revealObserver.observe(el);
         });
+
+        // Analytics
+        (function() {
+            const track = (path) => new Image().src = 'stats.php?t=1&p=' + encodeURIComponent(path);
+            track(location.pathname);
+            document.querySelectorAll('.work-item').forEach(el => {
+                el.addEventListener('click', () => track(el.querySelector('.work-title')?.textContent || el.href));
+            });
+        })();
     </script>
 </body>
 </html>
