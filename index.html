@@ -1218,13 +1218,11 @@
             revealObserver.observe(el);
         });
 
-        // Analytics
+        // Analytics (échoue silencieusement si DB indisponible)
         (function() {
-            const track = (path) => new Image().src = 'stats.php?t=1&p=' + encodeURIComponent(path);
-            track(location.pathname);
-            document.querySelectorAll('.work-item').forEach(el => {
-                el.addEventListener('click', () => track(el.querySelector('.work-title')?.textContent || el.href));
-            });
+            try {
+                new Image().src = 'stats.php?url=' + encodeURIComponent(location.href);
+            } catch(e) {}
         })();
     </script>
 </body>
